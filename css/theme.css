@@ -1,0 +1,324 @@
+/* ============================================================
+   NEURALMIND — "OBSERVATORY" THEME LAYER
+   A celestial star-atlas reskin. Loads AFTER style.css and only
+   overrides aesthetics (tokens, color, type, texture, motion).
+   No layout / z-index / visibility rules are touched, so the app's
+   behavior is untouched and this whole file is reversible by
+   removing its <link> from index.html.
+   ============================================================ */
+
+/* ── 1. Design tokens — repaint everything that flows through vars ── */
+:root {
+  /* Ink surfaces — deep, slightly warm night */
+  --bg-base:        #090C15;
+  --bg-surface:     #0E1320;
+  --bg-surface-2:   #151B2C;
+  --bg-surface-3:   #1C2438;
+  --bg-hover:       #232C44;
+
+  /* Brass is the signature; verdigris is the foil */
+  --brass:          #E8B24C;
+  --brass-lo:       #F6CE84;
+  --verdigris:      #5FB8A6;
+  --terracotta:     #DB7A4F;
+
+  --accent-primary: #E8B24C;   /* brass  */
+  --accent-glow:    #F6CE84;   /* light brass */
+  --accent-warm:    #EBA23C;
+  --accent-green:   #5FB8A6;   /* verdigris (success/done) */
+  --accent-pink:    #C9788F;
+  --accent-blue:    #79AEC6;   /* dusty celestial blue */
+  --accent-red:     #DB7A4F;   /* terracotta (danger)  */
+
+  /* Bone / parchment text on ink */
+  --text-primary:   #ECE4D2;
+  --text-secondary: #AAB0C0;
+  --text-muted:     #727A92;
+  --text-disabled:  #3A4159;
+
+  /* Hairline brass borders */
+  --border:         rgba(232, 178, 76, 0.14);
+  --border-hover:   rgba(232, 178, 76, 0.34);
+  --border-active:  rgba(232, 178, 76, 0.60);
+
+  /* Constellation palette (graph clusters) */
+  --cluster-philosophy:  #E8B24C;
+  --cluster-work:        #79AEC6;
+  --cluster-creative:    #C9788F;
+  --cluster-science:     #5FB8A6;
+  --cluster-personal:    #EBA23C;
+  --cluster-random:      #7C849C;
+
+  /* Warm shadow + brass glow */
+  --shadow-sm:          0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:          0 18px 50px rgba(0,0,0,0.55);
+  --shadow-glow:        0 0 26px rgba(232,178,76,0.18);
+  --shadow-glow-strong: 0 0 46px rgba(232,178,76,0.34);
+
+  --t-slow: 460ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── 2. Typography ── */
+body {
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  letter-spacing: 0.005em;
+}
+
+/* Display serif for the memorable moments */
+.logo-text,
+.modal-title,
+.empty-title,
+.detail-title,
+.reasoner-title,
+.reflect-card h4,
+.reflect-action-card h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+.empty-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 1.55rem;
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+
+.reflect-narrative {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.05rem;
+}
+
+.cluster-label { font-family: 'Hanken Grotesk', sans-serif; }
+
+::selection { background: rgba(232,178,76,0.30); color: #fff; }
+::-webkit-scrollbar-thumb { background: rgba(232,178,76,0.30); }
+::-webkit-scrollbar-thumb:hover { background: var(--brass); }
+
+/* ── 3. Atmosphere: starfield, glows, grain ── */
+
+/* Global film grain — sits above everything, never intercepts clicks */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* Canvas becomes a night sky: warm/cool nebula glows + faint star-grid */
+.canvas-area {
+  background:
+    radial-gradient(ellipse at 22% 26%, rgba(232,178,76,0.07), transparent 55%),
+    radial-gradient(ellipse at 82% 74%, rgba(95,184,166,0.06), transparent 55%),
+    radial-gradient(circle at 1px 1px, rgba(236,228,210,0.05) 1px, transparent 0) ,
+    var(--bg-base);
+  background-size: auto, auto, 32px 32px, auto;
+}
+
+/* A scatter of stars (some brass, some verdigris) behind the graph */
+.canvas-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%, rgba(236,228,210,0.65), transparent 60%),
+    radial-gradient(1px 1px   at 28% 66%, rgba(236,228,210,0.45), transparent 60%),
+    radial-gradient(1.8px 1.8px at 64% 32%, rgba(246,206,132,0.75), transparent 60%),
+    radial-gradient(1.1px 1.1px at 82% 58%, rgba(95,184,166,0.60), transparent 60%),
+    radial-gradient(1px 1px   at 46% 84%, rgba(236,228,210,0.40), transparent 60%),
+    radial-gradient(1.5px 1.5px at 73% 13%, rgba(236,228,210,0.55), transparent 60%),
+    radial-gradient(1px 1px   at 8%  86%, rgba(246,206,132,0.50), transparent 60%),
+    radial-gradient(1.2px 1.2px at 92% 30%, rgba(236,228,210,0.45), transparent 60%),
+    radial-gradient(1px 1px   at 38% 12%, rgba(95,184,166,0.45), transparent 60%);
+}
+
+/* Panels: ink glass with a hairline top highlight */
+.sidebar-left, .sidebar-right {
+  background:
+    linear-gradient(180deg, rgba(232,178,76,0.03), transparent 120px),
+    var(--bg-surface);
+}
+.topbar {
+  background: rgba(9, 12, 21, 0.82);
+  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 -1px 0 rgba(232,178,76,0.06);
+}
+/* A whisper-thin brass rule under the topbar */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232,178,76,0.35), transparent);
+  pointer-events: none;
+}
+
+/* ── 4. Repaint hard-coded purple moments ── */
+
+.logo-icon { filter: drop-shadow(0 0 9px rgba(232,178,76,0.55)); }
+.logo-text {
+  background: linear-gradient(135deg, var(--brass-lo), var(--brass));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+.logo-tag {
+  color: var(--brass);
+  background: rgba(232,178,76,0.14);
+  border: 1px solid rgba(232,178,76,0.34);
+}
+
+.toggle-btn.active {
+  background: var(--brass);
+  color: #1a1206;
+  box-shadow: 0 0 16px rgba(232,178,76,0.45);
+}
+
+.btn-reflect {
+  background: linear-gradient(135deg, rgba(232,178,76,0.16), rgba(95,184,166,0.14));
+  border: 1px solid rgba(232,178,76,0.40);
+  color: var(--brass-lo);
+}
+.btn-reflect:hover {
+  background: linear-gradient(135deg, rgba(232,178,76,0.30), rgba(95,184,166,0.24));
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-capture {
+  background: linear-gradient(135deg, var(--brass), #C8902F);
+  color: #1a1206;
+}
+.btn-capture kbd { background: rgba(0,0,0,0.18); border-color: rgba(0,0,0,0.25); color: #2a1f0a; }
+
+.node-count-badge {
+  color: var(--brass);
+  background: rgba(232,178,76,0.12);
+  border: 1px solid rgba(232,178,76,0.24);
+}
+
+.capture-tab.active {
+  background: rgba(232,178,76,0.14);
+  color: var(--brass-lo);
+  border: 1px solid rgba(232,178,76,0.32);
+}
+
+/* Focus rings → brass */
+#search-input:focus,
+#thought-input:focus, .image-context-input:focus, #link-notes:focus,
+#link-input:focus, .setting-input:focus, .setting-select:focus {
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 3px rgba(232,178,76,0.16);
+}
+
+/* Detail panel */
+/* Bugfix: the right-panel toggles via the `hidden` attribute, but the base
+   `.detail-content`/`.detail-empty { display:flex }` rules override it (no
+   `[hidden]` guard, unlike the modals) — so both stacked. Restore the toggle. */
+.detail-content[hidden],
+.detail-empty[hidden] { display: none !important; }
+
+.detail-type-badge {
+  background: rgba(232,178,76,0.14);
+  color: var(--brass-lo);
+  border: 1px solid rgba(232,178,76,0.32);
+}
+.detail-thought { border-left: 3px solid var(--brass); }
+.entity-chip {
+  background: rgba(95,184,166,0.12);
+  color: var(--verdigris);
+  border: 1px solid rgba(95,184,166,0.28);
+}
+.entity-chip:hover { background: rgba(95,184,166,0.22); }
+.connection-rel {
+  color: var(--brass);
+  background: rgba(232,178,76,0.12);
+}
+
+/* Toggles */
+.setting-toggle input:checked ~ .toggle-track {
+  background: rgba(232,178,76,0.30);
+  border-color: var(--brass);
+}
+.setting-toggle input:checked ~ .toggle-track::after { background: var(--brass); }
+
+/* Reflect modal accents */
+.reflect-narrative {
+  background: linear-gradient(135deg, rgba(232,178,76,0.10), rgba(95,184,166,0.08));
+  border: 1px solid rgba(232,178,76,0.22);
+}
+.reflect-action-card {
+  background: linear-gradient(135deg, rgba(232,178,76,0.12), rgba(95,184,166,0.10));
+  border: 1px solid rgba(232,178,76,0.32);
+}
+.reflect-action-card h4 { color: var(--brass-lo); }
+
+/* Reasoner drawer */
+.reasoner-drawer {
+  background: rgba(9, 12, 21, 0.97);
+  border-top: 1px solid rgba(232,178,76,0.40);
+  box-shadow: 0 -12px 60px rgba(0,0,0,0.55), 0 -2px 30px rgba(232,178,76,0.10);
+}
+.reasoner-icon {
+  background: linear-gradient(135deg, var(--brass), var(--verdigris));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.reasoner-rel-badge {
+  color: var(--brass-lo);
+  background: rgba(232,178,76,0.12);
+  border: 1px solid rgba(232,178,76,0.34);
+}
+.reasoner-summary {
+  background: linear-gradient(135deg, rgba(232,178,76,0.10), rgba(95,184,166,0.07));
+  border: 1px solid rgba(232,178,76,0.24);
+  border-left: 3px solid var(--brass);
+}
+.rc-icon { color: var(--brass); }
+.rc-list li::before { color: var(--brass); }
+.reasoner-synthesis {
+  background: linear-gradient(135deg, rgba(232,178,76,0.13), rgba(95,184,166,0.09));
+  border: 1px solid rgba(232,178,76,0.30);
+}
+.reasoner-synthesis::before {
+  background: radial-gradient(circle, rgba(232,178,76,0.18), transparent 70%);
+}
+.reasoner-synthesis .rc-label { color: var(--brass-lo); }
+
+/* Redefine animations that hard-coded purple (last @keyframes wins) */
+@keyframes procPulse {
+  from { box-shadow: 0 0 0 0 rgba(232,178,76,0.55); }
+  to   { box-shadow: 0 0 0 6px rgba(232,178,76,0); }
+}
+
+/* Voice rings already use var(--accent-primary) → now brass automatically */
+
+/* ── 5. Orchestrated page-load: a staggered reveal ── */
+@keyframes nmRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes nmSlideL {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes nmSlideR {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.topbar       { animation: nmRise   0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.sidebar-left { animation: nmSlideL 0.6s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
+.canvas-area  { animation: nmRise   0.7s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
+.sidebar-right{ animation: nmSlideR 0.6s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar, .sidebar-left, .canvas-area, .sidebar-right { animation: none; }
+  body::after { display: none; }
+}

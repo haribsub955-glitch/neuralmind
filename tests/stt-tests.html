@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>STT Tests</title></head>
+<body>
+<h1>STT Tests</h1>
+<pre id="out">Open the console or call window.runResampleTest() / window.runTranscribeTest().</pre>
+
+<!-- Controller under test. Path is relative to THIS page. -->
+<script src="../js/whisperSTT.js"></script>
+
+<script>
+function log(msg) {
+  document.getElementById('out').textContent += '\n' + msg;
+  console.log(msg);
+}
+
+// ── Unit test: resample any AudioBuffer to 16 kHz mono ──
+window.runResampleTest = async () => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const srcRate = 44100, dur = 0.5;                 // 0.5s @ 44.1kHz
+  const buf = ctx.createBuffer(1, Math.floor(srcRate * dur), srcRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.sin(2 * Math.PI * 440 * i / srcRate);
+
+  const out = await WhisperSTT._resampleToMono16k(buf);
+  const expectedLen = 16000 * dur;                  // 8000 samples
+  const ok = (out instanceof Float32Array)
+    && Math.abs(out.length - expectedLen) <= 4      // allow tiny rounding
+    && out.some(v => v !== 0);                       // not silent
+  const result = { passed: ok, length: out.length, expected: expectedLen };
+  log('runResampleTest → ' + JSON.stringify(result));
+  ctx.close();
+  return result;
+};
+</script>
+
+<script>
+// ── Integration test: real model transcribes a known clip, no repetition ──
+window.runTranscribeTest = async (model = 'whisper-tiny.en') => {
+  WhisperSTT.init({ model, callbacks: {
+    onProgress: (p) => log('  model load ' + p + '%'),
+    onStatus:   (s) => log('  status: ' + s),
+  }});
+
+  // Fetch JFK sample, decode + resample to 16 kHz mono via the controller's helper.
+  const resp = await fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav');
+  const ab   = await resp.arrayBuffer();
+  const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await ctx.decodeAudioData(ab.slice(0));
+  const audio   = await WhisperSTT._resampleToMono16k(decoded);
+  ctx.close();
+
+  const text = (await WhisperSTT._transcribeForTest(audio)).toLowerCase();
+
+  // Accuracy: the JFK clip says "...ask not what your country can do for you...".
+  const accurate = text.includes('country') && text.includes('ask');
+  // No-repeat regression guard: same word never repeats 4+ times in a row.
+  const words = text.replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean);
+  let maxRun = 1, run = 1;
+  for (let i = 1; i < words.length; i++) { run = words[i] === words[i-1] ? run + 1 : 1; maxRun = Math.max(maxRun, run); }
+  const noRepeat = maxRun < 4;
+
+  const result = { passed: accurate && noRepeat, accurate, noRepeat, maxRun, text };
+  log('runTranscribeTest → ' + JSON.stringify(result));
+  return result;
+};
+</script>
+</body>
+</html>
