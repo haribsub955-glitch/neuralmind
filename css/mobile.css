@@ -1,0 +1,410 @@
+/* ============================================================
+   NEURAL MIND — Mobile Frontend
+   A dedicated, touch-first layout that takes over ≤768px.
+
+   Strategy
+   --------
+   • Desktop DOM & IDs are kept intact so all existing JS keeps working.
+   • The 3-column layout collapses into: full-screen canvas + a thumb-
+     reachable bottom nav + sliding bottom sheets for Capture / Detail.
+   • Panels become gesture-friendly sheets driven by `body` state classes
+     toggled in js/mobile.js (.m-capture-open / .m-detail-open / …).
+
+   All mobile chrome (.mobile-nav, .mobile-scrim, .mobile-search, the
+   sheet drag-handles) is display:none by default and only revealed inside
+   the breakpoint below — so desktop is completely untouched.
+   ============================================================ */
+
+.mobile-nav,
+.mobile-scrim,
+.mobile-search,
+.sheet-handle { display: none; }
+
+@media (max-width: 768px) {
+
+  /* ── Mobile design tokens ───────────────────────────────── */
+  :root {
+    --mnav-h: 62px;                       /* bottom-nav height       */
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+    --topbar-h: 54px;
+    --sheet-max: 88vh;
+  }
+
+  /* Allow the page to own scroll inside sheets; lock the shell */
+  html, body { overflow: hidden; height: 100%; overscroll-behavior: none; }
+
+  /* ============================================================
+     TOPBAR — compacted to logo · workspace · settings
+     ============================================================ */
+  .topbar {
+    height: calc(var(--topbar-h) + var(--safe-t));
+    padding: var(--safe-t) 12px 0;
+    gap: 8px;
+  }
+  .topbar-logo { gap: 6px; min-width: 0; }
+  .logo-icon { width: 26px; height: 26px; }
+  .logo-text { font-size: 1rem; }
+  .logo-tag { display: none; }
+
+  /* Workspace pill flexes to fill, truncates gracefully */
+  .workspace-selector { flex: 1; min-width: 0; }
+  .workspace-active-btn { width: 100%; max-width: 220px; }
+  .ws-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* The view-toggle, search & reflect live in the bottom nav now */
+  .topbar-controls { gap: 8px; }
+  .topbar-controls .view-toggle,
+  .topbar-controls .search-bar,
+  .topbar-controls .btn-reflect { display: none; }
+
+  /* Settings stays as a big tap target on the right */
+  .btn-settings, #btn-settings {
+    width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* Workspace dropdown becomes a roomy popover under the bar */
+  .workspace-dropdown {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--safe-t) + 6px);
+    left: 10px; right: 10px;
+    width: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  /* ============================================================
+     MAIN LAYOUT → single full-bleed canvas
+     ============================================================ */
+  .main-layout {
+    display: block;
+    height: 100dvh;
+    padding-top: calc(var(--topbar-h) + var(--safe-t));
+  }
+
+  .canvas-area {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--safe-t));
+    left: 0; right: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+  }
+
+  .graph-container, .cluster-container { width: 100%; height: 100%; }
+
+  /* Float graph zoom controls clear of the bottom nav */
+  .graph-controls {
+    bottom: calc(var(--mnav-h) + var(--safe-b) + 16px);
+    right: 12px;
+    flex-direction: column;
+  }
+  .graph-ctrl-btn { width: 40px; height: 40px; font-size: 1.1rem; }
+
+  /* Legend folds to a compact chip up top-left. Must clear the base
+     `bottom` so it shrink-wraps instead of stretching full height. */
+  .graph-legend {
+    top: 12px; left: 12px;
+    bottom: auto;
+    max-width: 46vw;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 0.62rem;
+  }
+
+  /* Empty-state sized for a phone */
+  .empty-state { padding: 0 28px; }
+  .empty-icon svg { width: 64px; height: 64px; }
+  .empty-title { font-size: 1.15rem; }
+  .empty-desc { font-size: 0.85rem; }
+
+  /* ============================================================
+     SHARED SHEET BEHAVIOUR
+     Capture (left) & Detail (right) become bottom sheets.
+     ============================================================ */
+  .sidebar-left,
+  .sidebar-right {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: var(--sheet-max);
+    height: auto;
+    z-index: 180;
+    border: 1px solid var(--border-hover);
+    border-bottom: none;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    box-shadow: 0 -16px 50px rgba(0, 0, 0, 0.55);
+    padding-bottom: var(--safe-b);
+    /* Cancel the desktop entrance animation (theme.css nmSlideL/R) — its
+       `both` fill mode would otherwise pin transform to translateX(0)
+       and defeat the sheet's translateY. */
+    animation: none;
+    transform: translateY(105%);
+    transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+    overscroll-behavior: contain;
+  }
+
+  /* Re-show the right sidebar that the desktop ≤900px rule hides */
+  .sidebar-right { display: flex; }
+
+  /* Grab handle injected by mobile.js at the top of each sheet */
+  .sheet-handle {
+    display: block;
+    width: 40px; height: 5px;
+    margin: 10px auto 4px;
+    border-radius: var(--r-full);
+    background: var(--text-muted);
+    opacity: 0.6;
+    flex-shrink: 0;
+    cursor: grab;
+  }
+
+  /* Open states (toggled on <body>) */
+  body.m-capture-open .sidebar-left { transform: translateY(0); }
+  body.m-detail-open  .sidebar-right { transform: translateY(0); }
+
+  /* Make panel bodies scroll within the sheet */
+  .sidebar-left, .sidebar-right { overflow: hidden; }
+  .capture-mode, .recent-section, .detail-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Capture sheet polish ── */
+  .panel-header { padding: 6px 18px 8px; }
+  .capture-tabs { padding: 0 12px 10px; gap: 6px; }
+  .capture-tab { padding: 10px 4px; font-size: 0.68rem; }
+  .capture-tab svg { width: 18px; height: 18px; }
+
+  /* Roomy inputs (≥16px font prevents iOS auto-zoom) */
+  #thought-input,
+  .image-context-input,
+  #link-input,
+  .setting-input,
+  .setting-select,
+  #search-input {
+    font-size: 16px;
+  }
+
+  .btn-capture {
+    padding: 14px;
+    font-size: 0.95rem;
+    border-radius: var(--r-md);
+  }
+  .btn-capture kbd { display: none; }   /* no ⌘↵ on touch */
+
+  /* Recent list scrolls; cap its height so the sheet stays usable */
+  .recent-section { max-height: 30vh; overflow-y: auto; }
+
+  /* Voice widget gets a bigger mic for thumbs */
+  .voice-btn { width: 96px; height: 96px; }
+
+  /* ── Detail sheet polish ── */
+  .detail-empty { display: none; }       /* never show the empty hint as a sheet */
+  .detail-content { padding: 4px 18px 22px; }
+  .detail-actions { flex-direction: column; gap: 8px; }
+  .btn-action { width: 100%; padding: 12px; }
+
+  /* ============================================================
+     BOTTOM NAVIGATION + FAB
+     ============================================================ */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: calc(var(--mnav-h) + var(--safe-b));
+    padding: 0 6px var(--safe-b);
+    align-items: center;
+    justify-content: space-around;
+    background: rgba(8, 11, 20, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    z-index: 170;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Slide the nav away while a sheet/overlay owns the screen */
+  body.m-capture-open .mobile-nav,
+  body.m-detail-open  .mobile-nav,
+  body.m-search-open  .mobile-nav { transform: translateY(120%); }
+
+  .mnav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--t-fast);
+  }
+  .mnav-btn svg { width: 22px; height: 22px; }
+  .mnav-btn.active { color: var(--accent-glow); }
+  .mnav-btn:active { color: var(--text-primary); }
+
+  /* Center floating action button — the primary "capture" affordance */
+  .mnav-fab {
+    flex: 0 0 auto;
+    width: 58px; height: 58px;
+    margin: 0 4px;
+    transform: translateY(-16px);
+    border: none;
+    border-radius: var(--r-full);
+    background: linear-gradient(135deg, #A78BFA, #6C63FF);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(108, 99, 255, 0.5), var(--shadow-glow);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .mnav-fab svg { width: 26px; height: 26px; }
+  .mnav-fab:active { transform: translateY(-16px) scale(0.92); }
+
+  /* ============================================================
+     SCRIM — dims canvas behind any open sheet
+     ============================================================ */
+  .mobile-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 14, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 160;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .mobile-scrim:not([hidden]) { opacity: 1; pointer-events: auto; }
+
+  /* ============================================================
+     SEARCH — slide-down sheet; hosts the relocated .search-bar
+     ============================================================ */
+  .mobile-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: calc(var(--safe-t) + 10px) 14px 10px;
+    background: rgba(8, 11, 20, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 190;
+    transform: translateY(-110%);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  body.m-search-open .mobile-search { transform: translateY(0); }
+
+  .mobile-search-inner { flex: 1; min-width: 0; }
+  /* The relocated search bar fills the overlay */
+  .mobile-search .search-bar { display: flex; width: 100%; }
+  .mobile-search #search-input { width: 100%; }
+
+  .mobile-search-cancel {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent-glow);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 4px;
+    cursor: pointer;
+  }
+
+  /* ============================================================
+     MODALS → full-width bottom sheets
+     ============================================================ */
+  .modal-backdrop { align-items: flex-end; }
+  .modal-panel,
+  .modal-panel.modal-wide,
+  .modal-panel.modal-compact {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    border-bottom: none;
+    animation: mSheetUp 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .modal-body { padding-bottom: calc(var(--safe-b) + 8px); }
+  .modal-footer { padding-bottom: calc(var(--safe-b) + 14px); }
+  .modal-footer .btn-capture { width: 100%; padding: 14px; }
+
+  @keyframes mSheetUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Reflection grid stacks on a phone */
+  .reflect-grid { grid-template-columns: 1fr; }
+  .reflect-card-wide { grid-column: auto; }
+
+  /* Workspace pickers wrap nicely; bigger swatches for touch */
+  .ws-icon-grid { grid-template-columns: repeat(6, 1fr); }
+  .ws-icon-btn, .ws-color-btn { min-height: 40px; }
+  .ws-modal-footer { flex-wrap: wrap; gap: 8px; }
+  .ws-footer-right { flex: 1; display: flex; gap: 8px; }
+  .ws-footer-right .btn-capture,
+  .ws-footer-right .btn-data { flex: 1; }
+
+  /* ============================================================
+     REASONER DRAWER → full-width bottom sheet
+     ============================================================ */
+  .reasoner-drawer {
+    left: 0; right: 0;
+    max-height: 86dvh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    padding-bottom: var(--safe-b);
+  }
+  .reasoner-grid { grid-template-columns: 1fr; }
+  .reasoner-nodes { flex-wrap: wrap; }
+
+  /* ============================================================
+     PROCESSING OVERLAY — lift above the bottom nav
+     ============================================================ */
+  .processing-overlay { z-index: 165; }
+
+  /* ============================================================
+     TOASTS — sit above the bottom nav, centered
+     ============================================================ */
+  .toast-container {
+    left: 12px; right: 12px;
+    transform: none;                 /* override desktop translateX(-50%) */
+    bottom: calc(var(--mnav-h) + var(--safe-b) + 16px);
+    align-items: center;
+  }
+  .toast {
+    max-width: 100%;
+    text-align: center;
+    white-space: normal;             /* allow long messages to wrap */
+  }
+
+  /* Generous touch targets across interactive chrome */
+  .capture-tab,
+  .toggle-btn,
+  .btn-icon,
+  .graph-ctrl-btn,
+  .mnav-btn { touch-action: manipulation; }
+}
+
+/* ── Landscape phones: shorten sheets so the keyboard fits ── */
+@media (max-width: 928px) and (max-height: 480px) and (orientation: landscape) {
+  :root { --sheet-max: 96vh; }
+  .mobile-nav { height: calc(52px + var(--safe-b)); }
+  .voice-btn { width: 72px; height: 72px; }
+}

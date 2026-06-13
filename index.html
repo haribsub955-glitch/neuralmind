@@ -2,15 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>NeuralMind — Your Second Brain</title>
   <meta name="description" content="A personal visual knowledge graph that connects your thoughts, clusters ideas dynamically, and surfaces insights using AI." />
+  <!-- Mobile / PWA -->
+  <meta name="theme-color" content="#080B14" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NeuralMind" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
 </head>
 <body>
 
@@ -587,6 +595,44 @@
   <!-- Toast notification -->
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
+  <!-- ============================================================
+       MOBILE CHROME (injected layout — only visible ≤768px)
+  ============================================================ -->
+
+  <!-- Dimming scrim behind sheets -->
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+
+  <!-- Slide-down search overlay -->
+  <div class="mobile-search" id="mobile-search" hidden>
+    <div class="mobile-search-inner" id="mobile-search-inner">
+      <!-- .search-bar node is relocated here on mobile by mobile.js -->
+    </div>
+    <button class="mobile-search-cancel" id="mobile-search-cancel">Cancel</button>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Primary navigation">
+    <button class="mnav-btn active" id="mnav-graph" aria-label="Graph view">
+      <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="2"/><circle cx="3" cy="5" r="1.5"/><circle cx="17" cy="5" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="17" cy="15" r="1.5"/><line x1="10" y1="10" x2="3" y2="5" stroke="currentColor" stroke-width="1"/><line x1="10" y1="10" x2="17" y2="5" stroke="currentColor" stroke-width="1"/><line x1="10" y1="10" x2="3" y2="15" stroke="currentColor" stroke-width="1"/><line x1="10" y1="10" x2="17" y2="15" stroke="currentColor" stroke-width="1"/></svg>
+      <span>Graph</span>
+    </button>
+    <button class="mnav-btn" id="mnav-cluster" aria-label="Cluster view">
+      <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="6" cy="6" r="5" opacity="0.35"/><circle cx="14" cy="14" r="5" opacity="0.35"/><circle cx="6" cy="6" r="2"/><circle cx="14" cy="14" r="2"/><circle cx="14" cy="6" r="1.5"/><circle cx="6" cy="14" r="1.5"/></svg>
+      <span>Clusters</span>
+    </button>
+    <button class="mnav-fab" id="mnav-capture" aria-label="Capture a thought">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="mnav-btn" id="mnav-search" aria-label="Search">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <span>Search</span>
+    </button>
+    <button class="mnav-btn" id="mnav-reflect" aria-label="Reflect">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z"/></svg>
+      <span>Reflect</span>
+    </button>
+  </nav>
+
 
   <!-- Scripts -->
   <script src="js/graphStore.js"></script>
@@ -597,5 +643,6 @@
   <script src="js/capture.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/mobile.js"></script>
 </body>
 </html>
