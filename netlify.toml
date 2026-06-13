@@ -1,0 +1,19 @@
+# Netlify configuration for NeuralMind — a static, no-build site.
+# The whole repo root is published as-is (vanilla JS, no bundler).
+
+[build]
+  publish = "."
+  command = ""
+
+# SPA-style fallback: every path serves index.html (the app is one page).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Sensible security headers for a static app.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
